@@ -1,0 +1,60 @@
+FROM --platform=linux/386 alpine:latest
+
+# 1. Install Core Utils & Bash
+# 'shadow' is required to use 'useradd' and 'chpasswd' exactly like Debian.
+# 'build-base' replaces 'gcc' + 'make' and includes other build tools.
+RUN apk add --no-cache \
+    bash \
+    shadow \
+    build-base \
+    python3 \
+    vim \
+    unzip \
+    ruby \
+    nodejs \
+    fakeroot \
+    dbus \
+    newt \
+    hexedit \
+    patch \
+    file \
+    luajit \
+    lua5.4 \
+    dialog \
+    curl \
+    less \
+    netcat-openbsd \
+    man-pages \
+    mandoc \
+    words
+
+# 2. Install Community Packages
+# 'cowsay' is often in the community repo. We enable it temporarily to install.
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+    apk update && \
+    apk add --no-cache cowsay
+
+# 3. User Setup
+# We use 'useradd' (provided by the 'shadow' package installed above)
+RUN useradd -m -s /bin/bash user && \
+    echo "user:password" | chpasswd
+
+# 4. Copy Assets
+COPY --chown=user:user ./examples /home/user/examples
+RUN chmod -R +x /home/user/examples/lua
+
+# 5. Environment & Workdir
+# WebVM extracts these to set up the browser environment
+WORKDIR /home/user/
+ENV HOME="/home/user" \
+    TERM="xterm" \
+    USER="user" \
+    SHELL="/bin/bash" \
+    EDITOR="vim" \
+    LANG="en_US.UTF-8" \
+    LC_ALL="C"
+
+# 6. Root Password & CMD
+RUN echo 'root:password' | chpasswd
+
+CMD [ "/bin/bash" ]
