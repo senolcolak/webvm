@@ -1,8 +1,15 @@
 FROM --platform=linux/386 alpine:latest
 
-# 1. Install Core Utils & Bash
-# 'shadow' is required to use 'useradd' and 'chpasswd' exactly like Debian.
-# 'build-base' replaces 'gcc' + 'make' and includes other build tools.
+# 1. Enable Community & Testing Repositories
+# 'hexedit' is in the 'testing' repo.
+# 'cowsay' is in the 'community' repo.
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories && \
+    apk update
+
+# 2. Install All Packages
+# 'shadow' is required to use 'useradd' and 'chpasswd'
+# 'build-base' replaces 'gcc' + 'make'
 RUN apk add --no-cache \
     bash \
     shadow \
@@ -26,16 +33,10 @@ RUN apk add --no-cache \
     netcat-openbsd \
     man-pages \
     mandoc \
-    words
-
-# 2. Install Community Packages
-# 'cowsay' is often in the community repo. We enable it temporarily to install.
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
-    apk update && \
-    apk add --no-cache cowsay
+    words \
+    cowsay
 
 # 3. User Setup
-# We use 'useradd' (provided by the 'shadow' package installed above)
 RUN useradd -m -s /bin/bash user && \
     echo "user:password" | chpasswd
 
@@ -44,7 +45,6 @@ COPY --chown=user:user ./examples /home/user/examples
 RUN chmod -R +x /home/user/examples/lua
 
 # 5. Environment & Workdir
-# WebVM extracts these to set up the browser environment
 WORKDIR /home/user/
 ENV HOME="/home/user" \
     TERM="xterm" \
